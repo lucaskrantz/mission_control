@@ -30,7 +30,7 @@ export interface SystemStats {
 }
 
 export class DockerService extends EventEmitter {
-  private docker: Docker;
+  private docker: any;
   private eventStream: Readable | null = null;
 
   constructor() {

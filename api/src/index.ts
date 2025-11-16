@@ -22,7 +22,7 @@ const dockerService = new DockerService();
 // WebSocket server
 const wss = new WebSocketServer({ server, path: '/ws' });
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws: any) => {
   console.log('WebSocket client connected');
 
   // Send initial stats
@@ -42,17 +42,17 @@ wss.on('connection', (ws) => {
     dockerService.off('containerEvent', eventHandler);
   });
 
-  ws.on('error', (error) => {
+  ws.on('error', (error: any) => {
     console.error('WebSocket error:', error);
   });
 });
 
 // REST API endpoints
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: any, res: any) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.get('/api/stats', async (req, res) => {
+app.get('/api/stats', async (req: any, res: any) => {
   try {
     const stats = await dockerService.getContainerStats();
     res.json(stats);
@@ -62,7 +62,7 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-app.get('/api/container/:id', async (req, res) => {
+app.get('/api/container/:id', async (req: any, res: any) => {
   try {
     const details = await dockerService.getContainerDetails(req.params.id);
     res.json(details);
