@@ -9,20 +9,20 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "dockerode": "^4.0.0",
-    "ws": "^8.14.2",
+    "compression": "^1.7.4",
     "cors": "^2.8.5",
-    "compression": "^1.7.4"
+    "dockerode": "^4.0.0",
+    "express": "^4.18.2",
+    "ws": "^8.14.2"
   },
   "devDependencies": {
-    "@types/express": "^4.17.20",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/dockerode": "^3.3.46",
+    "@types/express": "^4.17.25",
     "@types/node": "^20.9.0",
-    "@types/ws": "^8.5.8",
-    "@types/cors": "^2.8.15",
-    "@types/compression": "^1.7.4",
-    "@types/dockerode": "^3.3.23",
-    "typescript": "^5.2.2",
-    "ts-node-dev": "^2.0.0"
+    "@types/ws": "^8.18.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.2.2"
   }
 }
