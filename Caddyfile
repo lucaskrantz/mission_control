@@ -1,0 +1,25 @@
+:80 {
+    # API endpoints
+    handle /api/* {
+        reverse_proxy api:8080
+    }
+
+    # WebSocket endpoint
+    handle /ws {
+        reverse_proxy api:8080
+    }
+
+    # Serve React app
+    handle /* {
+        reverse_proxy web:80
+    }
+
+    # Enable compression
+    encode gzip
+
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+}

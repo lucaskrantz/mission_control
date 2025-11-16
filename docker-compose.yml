@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./api
+    container_name: mission-control-api
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NODE_ENV=production
+    networks:
+      - mission-control
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    container_name: mission-control-web
+    networks:
+      - mission-control
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2-alpine
+    container_name: mission-control-proxy
+    ports:
+      - "3000:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - mission-control
+    depends_on:
+      - api
+      - web
+    restart: unless-stopped
+
+networks:
+  mission-control:
+    driver: bridge

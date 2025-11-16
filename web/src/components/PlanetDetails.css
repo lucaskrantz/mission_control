@@ -1,0 +1,255 @@
+.planet-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Header Section */
+.details-header-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.details-subtitle {
+  font-size: 11px;
+  color: rgba(191, 233, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid;
+  border-radius: 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(11, 21, 34, 0.5);
+  width: fit-content;
+}
+
+.state-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Details Section */
+.details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.details-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: rgba(191, 233, 255, 0.7);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(11, 21, 34, 0.3);
+  border-left: 2px solid rgba(191, 233, 255, 0.3);
+}
+
+.metric-label {
+  font-size: 10px;
+  color: rgba(191, 233, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 16px;
+  color: #6EE7B7;
+  font-weight: bold;
+}
+
+/* Image Info */
+.image-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(11, 21, 34, 0.3);
+  border-left: 2px solid rgba(191, 233, 255, 0.3);
+}
+
+.image-name {
+  font-size: 13px;
+  color: #E6FAFF;
+  font-weight: bold;
+}
+
+.image-tag {
+  font-size: 11px;
+  color: rgba(191, 233, 255, 0.7);
+}
+
+/* Collapsible */
+.collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(191, 233, 255, 0.2);
+  color: #E6FAFF;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  transition: all 0.2s;
+}
+
+.collapsible-header:hover {
+  border-bottom-color: rgba(191, 233, 255, 0.5);
+}
+
+.collapsible-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: rgba(191, 233, 255, 0.7);
+  letter-spacing: 0.5px;
+}
+
+.collapsible-icon {
+  font-size: 16px;
+  color: #6EE7B7;
+  font-weight: bold;
+}
+
+.collapsible-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(11, 21, 34, 0.2);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.detail-label {
+  color: rgba(191, 233, 255, 0.8);
+}
+
+.detail-value {
+  color: #E6FAFF;
+  font-weight: bold;
+}
+
+/* Actions */
+.actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(11, 21, 34, 0.5);
+  border: 1px solid rgba(191, 233, 255, 0.4);
+  color: #E6FAFF;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: rgba(191, 233, 255, 0.1);
+  border-color: #6EE7B7;
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Monospace small text */
+.mono-small {
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+  opacity: 0.9;
+}
+
+/* Service Section */
+.service-badge {
+  margin-left: 8px;
+  font-size: 12px;
+  padding: 2px 8px;
+  background: rgba(110, 231, 183, 0.15);
+  border-radius: 8px;
+  color: #6EE7B7;
+  font-weight: normal;
+}
+
+.player-indicator-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6EE7B7;
+  margin-right: 6px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #E6FAFF;
+  font-family: 'Courier New', monospace;
+  padding: 4px 8px;
+  background: rgba(11, 21, 34, 0.3);
+  border-left: 2px solid rgba(110, 231, 183, 0.3);
+}
+
+.player-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #6EE7B7;
+  flex-shrink: 0;
+}
