@@ -1,6 +1,7 @@
 import Docker from 'dockerode';
 import { EventEmitter } from 'events';
 import { Readable } from 'stream';
+import { readFileSync } from 'fs';
 import { enrichContainer } from '../adapters';
 
 export interface ContainerStats {
@@ -27,6 +28,7 @@ export interface ContainerStats {
 export interface HostStats {
   totalMemoryBytes: number;
   cpuCount: number;
+  cpuPercent: number;
 }
 
 export interface SystemStats {
@@ -43,6 +45,7 @@ export class DockerService extends EventEmitter {
   private eventStream: Readable | null = null;
   private statsRefreshInterval: NodeJS.Timeout | null = null;
   private readonly STATS_REFRESH_MS = 2000;
+  private previousCpuStats: { total: number; idle: number } | null = null;
 
   constructor() {
     super();
@@ -70,6 +73,36 @@ export class DockerService extends EventEmitter {
     
     // Fallback: use the full name
     return name;
+  }
+
+  private async getHostCpuUsage(): Promise<number> {
+    try {
+      const cpuData = readFileSync('/proc/stat', 'utf-8');
+      const cpuLine = cpuData.split('\n')[0];
+      const cpuValues = cpuLine.split(/\s+/).slice(1).map(Number);
+      
+      // CPU time values: user, nice, system, idle, iowait, irq, softirq, steal
+      const idle = cpuValues[3] + cpuValues[4]; // idle + iowait
+      const total = cpuValues.reduce((sum, val) => sum + val, 0);
+      
+      if (this.previousCpuStats) {
+        const totalDelta = total - this.previousCpuStats.total;
+        const idleDelta = idle - this.previousCpuStats.idle;
+        
+        if (totalDelta > 0) {
+          const cpuPercent = ((totalDelta - idleDelta) / totalDelta) * 100;
+          this.previousCpuStats = { total, idle };
+          return Math.round(cpuPercent * 10) / 10; // Round to 1 decimal
+        }
+      }
+      
+      // Store current stats for next calculation
+      this.previousCpuStats = { total, idle };
+      return 0;
+    } catch (error) {
+      console.error('Error reading host CPU stats:', error);
+      return 0;
+    }
   }
 
   private formatContainerStatus(state: string, uptimeSeconds: number, originalStatus: string): string {
@@ -221,6 +254,9 @@ export class DockerService extends EventEmitter {
       const stoppedContainers = stats.filter(c => c.state === 'exited').length;
       const pausedContainers = stats.filter(c => c.state === 'paused').length;
 
+      // Get host CPU usage
+      const hostCpuPercent = await this.getHostCpuUsage();
+
       return {
         totalContainers: stats.length,
         runningContainers,
@@ -229,6 +265,7 @@ export class DockerService extends EventEmitter {
         host: {
           totalMemoryBytes: systemInfo.MemTotal || 0,
           cpuCount: systemInfo.NCPU || 1,
+          cpuPercent: hostCpuPercent,
         },
         containers: stats,
       };

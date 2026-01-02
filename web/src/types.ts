@@ -30,6 +30,7 @@ export interface ContainerStats {
 export interface HostStats {
   totalMemoryBytes: number;
   cpuCount: number;
+  cpuPercent: number;
 }
 
 export interface SystemStats {
