@@ -33,7 +33,7 @@ const SidePanel: React.FC = () => {
       else counts.other++;
 
       totalCpu += c.cpuPercent || 0;
-      totalMem += c.memoryUsage || 0;
+      totalMem += c.memoryUsageBytes || 0;
     });
 
     const avgCpu = group.containers.length > 0 ? totalCpu / group.containers.length : 0;
@@ -41,14 +41,14 @@ const SidePanel: React.FC = () => {
     return {
       counts,
       avgCpu,
-      totalMem: totalMem / (1024 * 1024), // Convert to MB
+      totalMem: totalMem / (1024 * 1024), // Convert to MiB
       members: group.containers.map((c: ContainerStats) => ({
         id: c.id,
         name: c.name,
         state: c.state,
         cpu: c.cpuPercent || 0,
-        mem: c.memoryUsage / (1024 * 1024), // MB
-        memLimit: c.memoryLimit / (1024 * 1024), // MB
+        mem: c.memoryUsageBytes / (1024 * 1024), // MiB
+        memLimit: c.memoryLimitBytes / (1024 * 1024), // MiB
       })),
     };
   }, [selection]);
@@ -94,7 +94,7 @@ const SidePanel: React.FC = () => {
               <div className="stats-row">
                 <span className="stat-label">Memory:</span>
                 <span className="stat-value">
-                  {(hover.container.memoryUsage / (1024 * 1024)).toFixed(0)} MB
+                  {(hover.container.memoryUsageBytes / (1024 * 1024)).toFixed(0)} MiB
                 </span>
               </div>
             </div>
@@ -188,7 +188,7 @@ const SidePanel: React.FC = () => {
             </div>
             <div className="stats-row">
               <span className="stat-label">Total Mem:</span>
-              <span className="stat-value">{groupStats.totalMem.toFixed(0)} MB</span>
+              <span className="stat-value">{groupStats.totalMem.toFixed(0)} MiB</span>
             </div>
           </div>
 
@@ -201,7 +201,7 @@ const SidePanel: React.FC = () => {
                   <div className="member-info">
                     <div className="member-name">{member.name}</div>
                     <div className="member-stats">
-                      CPU {member.cpu.toFixed(1)}% · Mem {member.mem.toFixed(0)} MB
+                      CPU {member.cpu.toFixed(1)}% · Mem {member.mem.toFixed(0)} MiB
                     </div>
                   </div>
                 </div>

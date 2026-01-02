@@ -35,11 +35,20 @@ wss.on('connection', (ws: any) => {
     ws.send(JSON.stringify({ type: 'event', data: event }));
   };
 
+  // Subscribe to periodic stats updates
+  const statsUpdateHandler = (stats: any) => {
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify({ type: 'stats', data: stats }));
+    }
+  };
+
   dockerService.on('containerEvent', eventHandler);
+  dockerService.on('statsUpdate', statsUpdateHandler);
 
   ws.on('close', () => {
     console.log('WebSocket client disconnected');
     dockerService.off('containerEvent', eventHandler);
+    dockerService.off('statsUpdate', statsUpdateHandler);
   });
 
   ws.on('error', (error: any) => {

@@ -14,17 +14,17 @@ const PlanetDetails: React.FC<PlanetDetailsProps> = ({ container, groupTitle }) 
   const [labelsExpanded, setLabelsExpanded] = useState(false);
   const [playerListExpanded, setPlayerListExpanded] = useState(false);
 
-  const formatUptime = (created: number) => {
-    const now = Date.now();
-    const diff = now - created * 1000;
-    const seconds = Math.floor(diff / 1000);
+  const formatUptime = (uptimeSeconds: number) => {
+    if (uptimeSeconds === 0) return 'Not running';
+    
+    const seconds = uptimeSeconds;
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
     if (days > 0) return `${days}d ${hours % 24}h`;
     if (hours > 0) return `${hours}h ${minutes % 60}m`;
-    if (minutes > 0) return `${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
     return `${seconds}s`;
   };
 
@@ -72,7 +72,7 @@ const PlanetDetails: React.FC<PlanetDetailsProps> = ({ container, groupTitle }) 
           <div className="metric-item">
             <div className="metric-label">Memory</div>
             <div className="metric-value">
-              {(container.memoryUsage / (1024 * 1024)).toFixed(0)} MB
+              {(container.memoryUsageBytes / (1024 * 1024)).toFixed(0)} MiB
             </div>
           </div>
           <div className="metric-item">
@@ -81,7 +81,7 @@ const PlanetDetails: React.FC<PlanetDetailsProps> = ({ container, groupTitle }) 
           </div>
           <div className="metric-item">
             <div className="metric-label">Uptime</div>
-            <div className="metric-value">{formatUptime(container.created)}</div>
+            <div className="metric-value">{formatUptime(container.uptimeSeconds)}</div>
           </div>
         </div>
       </div>
@@ -91,7 +91,7 @@ const PlanetDetails: React.FC<PlanetDetailsProps> = ({ container, groupTitle }) 
         <div className="details-section-title">Status</div>
         <div className="detail-row">
           <span className="detail-label">Full Status:</span>
-          <span className="detail-value">{container.status}</span>
+          <span className="detail-value">{container.statusFormatted}</span>
         </div>
         <div className="detail-row">
           <span className="detail-label">Container ID:</span>
@@ -214,8 +214,8 @@ const PlanetDetails: React.FC<PlanetDetailsProps> = ({ container, groupTitle }) 
             <div className="detail-row">
               <span className="detail-label">Mem Limit:</span>
               <span className="detail-value">
-                {container.memoryLimit > 0
-                  ? `${(container.memoryLimit / (1024 * 1024)).toFixed(0)} MB`
+                {container.memoryLimitBytes > 0
+                  ? `${(container.memoryLimitBytes / (1024 * 1024)).toFixed(0)} MiB`
                   : 'Unlimited'}
               </span>
             </div>

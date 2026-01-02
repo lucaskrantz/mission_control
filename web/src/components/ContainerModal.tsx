@@ -109,7 +109,7 @@ const ContainerModal: React.FC<ContainerModalProps> = ({ container, onClose }) =
                 <div className="info-item">
                   <span className="info-label">MEMORY:</span>
                   <span className="info-value">
-                    {formatBytes(container.memoryUsage)} / {formatBytes(container.memoryLimit)}
+                    {formatBytes(container.memoryUsageBytes)} / {formatBytes(container.memoryLimitBytes)}
                   </span>
                 </div>
                 <div className="info-item">

@@ -9,10 +9,13 @@ export interface ContainerStats {
   image: string;
   state: string;
   status: string;
+  statusFormatted: string;
   created: number;
+  startedAt: string | null;
+  uptimeSeconds: number;
   cpuPercent: number;
-  memoryUsage: number;
-  memoryLimit: number;
+  memoryUsageBytes: number;
+  memoryLimitBytes: number;
   memoryPercent: number;
   networkRx: number;
   networkTx: number;
@@ -32,6 +35,8 @@ export interface SystemStats {
 export class DockerService extends EventEmitter {
   private docker: any;
   private eventStream: Readable | null = null;
+  private statsRefreshInterval: NodeJS.Timeout | null = null;
+  private readonly STATS_REFRESH_MS = 2000;
 
   constructor() {
     super();
@@ -61,6 +66,29 @@ export class DockerService extends EventEmitter {
     return name;
   }
 
+  private formatContainerStatus(state: string, uptimeSeconds: number, originalStatus: string): string {
+    // For running containers, format with correct uptime
+    if (state === 'running' && uptimeSeconds > 0) {
+      const days = Math.floor(uptimeSeconds / 86400);
+      const hours = Math.floor((uptimeSeconds % 86400) / 3600);
+      const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+      const seconds = uptimeSeconds % 60;
+      
+      if (days > 0) {
+        return `Up ${days} day${days !== 1 ? 's' : ''}`;
+      } else if (hours > 0) {
+        return `Up ${hours} hour${hours !== 1 ? 's' : ''}`;
+      } else if (minutes > 0) {
+        return `Up ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+      } else {
+        return `Up ${seconds} second${seconds !== 1 ? 's' : ''}`;
+      }
+    }
+    
+    // For non-running containers, use the original status
+    return originalStatus;
+  }
+
   async getContainerStats(): Promise<SystemStats> {
     try {
       const containers = await this.docker.listContainers({ all: true });
@@ -70,11 +98,34 @@ export class DockerService extends EventEmitter {
         const container = this.docker.getContainer(containerInfo.Id);
         
         let cpuPercent = 0;
-        let memoryUsage = 0;
-        let memoryLimit = 0;
+        let memoryUsageBytes = 0;
+        let memoryLimitBytes = 0;
         let memoryPercent = 0;
         let networkRx = 0;
         let networkTx = 0;
+        let startedAt: string | null = null;
+        let uptimeSeconds = 0;
+
+        // Get container inspect data for accurate uptime
+        try {
+          const inspect = await container.inspect();
+          startedAt = inspect.State.StartedAt;
+          
+          // Calculate uptime from StartedAt if container is running
+          if (containerInfo.State === 'running' && startedAt && startedAt !== '0001-01-01T00:00:00Z') {
+            const startTime = new Date(startedAt).getTime();
+            const now = Date.now();
+            uptimeSeconds = Math.floor((now - startTime) / 1000);
+            
+            // Ensure uptimeSeconds is a valid positive number
+            if (uptimeSeconds < 0 || !isFinite(uptimeSeconds)) {
+              console.error(`Invalid uptime calculated for ${containerInfo.Id}: ${uptimeSeconds}`);
+              uptimeSeconds = 0;
+            }
+          }
+        } catch (error) {
+          console.error(`Error inspecting container ${containerInfo.Id}:`, error);
+        }
 
         // Get live stats for running containers
         if (containerInfo.State === 'running') {
@@ -82,23 +133,28 @@ export class DockerService extends EventEmitter {
             const statsStream = await container.stats({ stream: false });
             const statsData = statsStream as any;
 
-            // Calculate CPU percentage
+            // Calculate CPU percentage using Docker's recommended formula
+            // Reference: https://docs.docker.com/engine/api/v1.41/#operation/ContainerStats
             const cpuDelta = statsData.cpu_stats.cpu_usage.total_usage - 
                            (statsData.precpu_stats.cpu_usage?.total_usage || 0);
             const systemDelta = statsData.cpu_stats.system_cpu_usage - 
                               (statsData.precpu_stats.system_cpu_usage || 0);
             const cpuCount = statsData.cpu_stats.online_cpus || 1;
             
-            if (systemDelta > 0 && cpuDelta > 0) {
+            // Only calculate if we have valid deltas (avoids issues on first call)
+            if (systemDelta > 0 && cpuDelta >= 0) {
               cpuPercent = (cpuDelta / systemDelta) * cpuCount * 100;
             }
 
-            // Memory stats
-            memoryUsage = statsData.memory_stats.usage || 0;
-            memoryLimit = statsData.memory_stats.limit || 0;
-            memoryPercent = memoryLimit > 0 ? (memoryUsage / memoryLimit) * 100 : 0;
+            // Memory stats - exclude cache to match docker stats behavior
+            // Docker CLI formula: usage - cache
+            const memUsage = statsData.memory_stats.usage || 0;
+            const memCache = statsData.memory_stats.stats?.cache || 0;
+            memoryUsageBytes = Math.max(0, memUsage - memCache);
+            memoryLimitBytes = statsData.memory_stats.limit || 0;
+            memoryPercent = memoryLimitBytes > 0 ? (memoryUsageBytes / memoryLimitBytes) * 100 : 0;
 
-            // Network stats
+            // Network stats - sum across all interfaces
             if (statsData.networks) {
               for (const network of Object.values(statsData.networks) as any[]) {
                 networkRx += network.rx_bytes || 0;
@@ -113,16 +169,22 @@ export class DockerService extends EventEmitter {
         const name = containerInfo.Names[0].replace(/^\//, '');
         const group = this.deriveGroupFromContainer(containerInfo, name);
         
+        // Format status with correct uptime
+        const statusFormatted = this.formatContainerStatus(containerInfo.State, uptimeSeconds, containerInfo.Status);
+        
         stats.push({
           id: containerInfo.Id,
           name,
           image: containerInfo.Image,
           state: containerInfo.State,
           status: containerInfo.Status,
+          statusFormatted,
           created: containerInfo.Created,
+          startedAt,
+          uptimeSeconds,
           cpuPercent: Math.round(cpuPercent * 100) / 100,
-          memoryUsage,
-          memoryLimit,
+          memoryUsageBytes,
+          memoryLimitBytes,
           memoryPercent: Math.round(memoryPercent * 100) / 100,
           networkRx,
           networkTx,
@@ -226,9 +288,38 @@ export class DockerService extends EventEmitter {
     } catch (error) {
       console.error('Error starting Docker event stream:', error);
     }
+
+    // Start periodic stats refresh for live monitoring
+    this.startStatsRefresh();
+  }
+
+  private startStatsRefresh() {
+    if (this.statsRefreshInterval) {
+      clearInterval(this.statsRefreshInterval);
+    }
+
+    this.statsRefreshInterval = setInterval(async () => {
+      try {
+        const stats = await this.getContainerStats();
+        this.emit('statsUpdate', stats);
+      } catch (error) {
+        console.error('Error during periodic stats refresh:', error);
+      }
+    }, this.STATS_REFRESH_MS);
+
+    console.log(`Periodic stats refresh started (every ${this.STATS_REFRESH_MS}ms)`);
+  }
+
+  private stopStatsRefresh() {
+    if (this.statsRefreshInterval) {
+      clearInterval(this.statsRefreshInterval);
+      this.statsRefreshInterval = null;
+      console.log('Periodic stats refresh stopped');
+    }
   }
 
   stopEventStream() {
+    this.stopStatsRefresh();
     if (this.eventStream) {
       this.eventStream.destroy();
       this.eventStream = null;

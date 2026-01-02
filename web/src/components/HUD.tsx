@@ -23,21 +23,31 @@ const HUD: React.FC<HUDProps> = ({ systemStats }) => {
   const formatUptime = (): string => {
     if (!systemStats?.containers.length) return '0m';
     
-    // Get oldest container creation time
-    const oldestCreated = Math.min(...systemStats.containers.map(c => c.created));
-    const uptimeSeconds = Math.floor((Date.now() - oldestCreated) / 1000);
+    // Get longest uptime from running containers
+    const runningContainers = systemStats.containers.filter(c => c.state === 'running');
+    if (runningContainers.length === 0) return '0m';
     
-    const days = Math.floor(uptimeSeconds / 86400);
-    const hours = Math.floor((uptimeSeconds % 86400) / 3600);
-    const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+    // Filter out invalid uptime values (e.g., Unix timestamps mistakenly used)
+    // Valid uptime should be less than ~100 years (3.15e9 seconds)
+    const validUptimes = runningContainers
+      .map(c => c.uptimeSeconds)
+      .filter(uptime => uptime > 0 && uptime < 3153600000);
+    
+    if (validUptimes.length === 0) return '0m';
+    
+    const maxUptimeSeconds = Math.max(...validUptimes);
+    
+    const days = Math.floor(maxUptimeSeconds / 86400);
+    const hours = Math.floor((maxUptimeSeconds % 86400) / 3600);
+    const minutes = Math.floor((maxUptimeSeconds % 3600) / 60);
     
     if (days > 0) return `${days}d ${hours}h`;
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
   };
 
-  const totalMemory = systemStats?.containers.reduce((sum, c) => sum + c.memoryUsage, 0) || 0;
-  const totalMemoryLimit = systemStats?.containers.reduce((sum, c) => sum + c.memoryLimit, 0) || 0;
+  const totalMemory = systemStats?.containers.reduce((sum, c) => sum + c.memoryUsageBytes, 0) || 0;
+  const totalMemoryLimit = systemStats?.containers.reduce((sum, c) => sum + c.memoryLimitBytes, 0) || 0;
   const avgCpu = systemStats?.containers.length 
     ? (systemStats.containers.reduce((sum, c) => sum + c.cpuPercent, 0) / systemStats.containers.length).toFixed(1)
     : '0.0';

@@ -4,10 +4,13 @@ export interface ContainerStats {
   image: string;
   state: string;
   status: string;
+  statusFormatted: string;
   created: number;
+  startedAt: string | null;
+  uptimeSeconds: number;
   cpuPercent: number;
-  memoryUsage: number;
-  memoryLimit: number;
+  memoryUsageBytes: number;
+  memoryLimitBytes: number;
   memoryPercent: number;
   networkRx: number;
   networkTx: number;

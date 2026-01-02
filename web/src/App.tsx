@@ -10,11 +10,12 @@ import './App.css';
 const App: React.FC = () => {
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const { isConnected } = useWebSocket((data) => {
-    if (data.type === 'initial' || data.type === 'update') {
+    if (data.type === 'initial' || data.type === 'stats') {
+      // Handle initial load and periodic stats updates from WebSocket
       setSystemStats(data.data);
     } else if (data.type === 'event') {
-      // Refresh stats on container events
-      fetchStats();
+      // Container events (start/stop/restart) - stats will be updated on next periodic refresh
+      console.log('Container event:', data.data);
     }
   });
 
@@ -29,11 +30,19 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    // Fetch initial stats as fallback if WebSocket is slow
     fetchStats();
-    // Throttle updates to 1-2 Hz for performance
-    const interval = setInterval(fetchStats, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    
+    // Fallback polling only if WebSocket disconnects
+    let fallbackInterval: NodeJS.Timeout | null = null;
+    if (!isConnected) {
+      fallbackInterval = setInterval(fetchStats, 2000);
+    }
+    
+    return () => {
+      if (fallbackInterval) clearInterval(fallbackInterval);
+    };
+  }, [isConnected]);
 
   return (
     <div className="app">
