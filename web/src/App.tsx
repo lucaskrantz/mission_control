@@ -34,9 +34,9 @@ const App: React.FC = () => {
     fetchStats();
     
     // Fallback polling only if WebSocket disconnects
-    let fallbackInterval: NodeJS.Timeout | null = null;
+    let fallbackInterval: number | null = null;
     if (!isConnected) {
-      fallbackInterval = setInterval(fetchStats, 2000);
+      fallbackInterval = setInterval(fetchStats, 2000) as unknown as number;
     }
     
     return () => {
