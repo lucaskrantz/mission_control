@@ -48,9 +48,9 @@ const HUD: React.FC<HUDProps> = ({ systemStats }) => {
 
   const totalMemory = systemStats?.containers.reduce((sum, c) => sum + c.memoryUsageBytes, 0) || 0;
   const hostMemory = systemStats?.host.totalMemoryBytes || 0;
-  const avgCpu = systemStats?.containers.length 
-    ? (systemStats.containers.reduce((sum, c) => sum + c.cpuPercent, 0) / systemStats.containers.length).toFixed(1)
-    : '0.0';
+  
+  const runningContainers = systemStats?.containers.filter(c => c.state === 'running') || [];
+  const totalCpu = runningContainers.reduce((sum, c) => sum + c.cpuPercent, 0).toFixed(1);
 
   // Calculate group statistics
   const groups = systemStats ? groupContainers(systemStats.containers) : [];
@@ -104,7 +104,7 @@ const HUD: React.FC<HUDProps> = ({ systemStats }) => {
       <div className="hud-right">
         <div className="hud-item">
           <span className="hud-label">CPU</span>
-          <span className="hud-value">{avgCpu}%</span>
+          <span className="hud-value">{totalCpu}%</span>
           <div className="hud-accent-bar" />
         </div>
         <div className="hud-separator" />
