@@ -24,11 +24,17 @@ export interface ContainerStats {
   extra?: Record<string, unknown>;
 }
 
+export interface HostStats {
+  totalMemoryBytes: number;
+  cpuCount: number;
+}
+
 export interface SystemStats {
   totalContainers: number;
   runningContainers: number;
   stoppedContainers: number;
   pausedContainers: number;
+  host: HostStats;
   containers: ContainerStats[];
 }
 
@@ -91,7 +97,10 @@ export class DockerService extends EventEmitter {
 
   async getContainerStats(): Promise<SystemStats> {
     try {
-      const containers = await this.docker.listContainers({ all: true });
+      const [containers, systemInfo] = await Promise.all([
+        this.docker.listContainers({ all: true }),
+        this.docker.info()
+      ]);
       const stats: ContainerStats[] = [];
 
       for (const containerInfo of containers) {
@@ -217,6 +226,10 @@ export class DockerService extends EventEmitter {
         runningContainers,
         stoppedContainers,
         pausedContainers,
+        host: {
+          totalMemoryBytes: systemInfo.MemTotal || 0,
+          cpuCount: systemInfo.NCPU || 1,
+        },
         containers: stats,
       };
     } catch (error) {

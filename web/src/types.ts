@@ -27,11 +27,17 @@ export interface ContainerStats {
   };
 }
 
+export interface HostStats {
+  totalMemoryBytes: number;
+  cpuCount: number;
+}
+
 export interface SystemStats {
   totalContainers: number;
   runningContainers: number;
   stoppedContainers: number;
   pausedContainers: number;
+  host: HostStats;
   containers: ContainerStats[];
 }
 
